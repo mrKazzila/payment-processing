@@ -1,2 +1,90 @@
+name: payment-processing
+
+x-app: &app
+  image: payment-processing:local
+  build:
+    context: .
+    dockerfile: Dockerfile
+  init: true
+  restart: unless-stopped
+  stop_grace_period: 30s
+
+
 services:
-  
+  postgres:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: payments
+      POSTGRES_PASSWORD: payments_dev
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    hostname: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: payments
+      RABBITMQ_DEFAULT_PASS: payments_dev
+      RABBITMQ_DEFAULT_VHOST: payments
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  api:
+    <<: *app
+    command: ["payment-processing"]
+    environment:
+      PP_APP__HOST: "0.0.0.0"
+      PP_APP__PORT: "8000"
+      PP_APP__LOG_LEVEL: INFO
+      PP_APP__LOG_RENDERER: console
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  consumer:
+    <<: *app
+    command: ["payment-processing-worker"]
+    environment:
+      PP_WORKER__HOST: "0.0.0.0"
+      PP_WORKER__PORT: "8001"
+      PP_WORKER__RABBITMQ_URL: "amqp://payments:payments_dev@rabbitmq:5672/payments"
+      PP_WORKER__LOG_LEVEL: INFO
+      PP_WORKER__LOG_RENDERER: console
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3).close()" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
