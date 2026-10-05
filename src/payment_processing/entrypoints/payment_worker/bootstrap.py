@@ -65,7 +65,7 @@ def create_application(*, settings: Settings) -> FastStream:
     @app.on_startup
     async def on_starting() -> None:
         await broker.connect()
-        await declare_topology(broker)
+        await declare_topology(broker=broker)
 
     @app.after_startup
     async def on_started() -> None:
