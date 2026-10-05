@@ -1,4 +1,4 @@
-from typing import final
+from typing import Literal, final
 
 from pydantic import Field
 
@@ -11,5 +11,7 @@ __all__ = ("Settings",)
 
 @final
 class Settings(BaseAppSettings):
+    environment: Literal["local", "test", "production"] = "production"
+
     app: AppSettings = Field(default_factory=AppSettings)
     worker: WorkerSettings = Field(default_factory=WorkerSettings)
