@@ -34,6 +34,7 @@ dev = [
 [project.scripts]
 payment-processing = "payment_processing.entrypoints.api.__main__:main"
 payment-processing-worker = "payment_processing.entrypoints.payment_worker.__main__:main"
+payment-processing-docs = "payment_processing.entrypoints.payment_worker.docs:main"
 
 [build-system]
 requires = ["uv_build>=0.12.19,<0.13.0"]
