@@ -22,6 +22,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "faststream[cli]>=0.7.7",
     "import-linter>=2.15",
     "pytest>=9.1.1",
     "pytest-xdist>=3.8.0",
@@ -89,6 +90,7 @@ ignore = [
     "ANN202",
     "ANN401",
     "PT007",
+    "COM812",
 ]
 
 [tool.ruff.format]
