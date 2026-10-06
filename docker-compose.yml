@@ -1,7 +1,7 @@
 name: payment-processing
 
 x-app: &app
-  image: payment-processing:local
+  image: "${APP_IMAGE:-payment-processing:local}"
   build:
     context: .
     dockerfile: Dockerfile
@@ -9,41 +9,61 @@ x-app: &app
   restart: unless-stopped
   stop_grace_period: 30s
 
+x-database-environment: &database-environment
+  PP_ENVIRONMENT: "${PP_ENVIRONMENT:-production}"
+  PP_DATABASE__HOST: "${PP_DATABASE__HOST:-postgres}"
+  PP_DATABASE__PORT: "${PP_DATABASE__PORT:-5432}"
+  PP_DATABASE__NAME: "${PP_DATABASE__NAME:?Set PP_DATABASE__NAME}"
+  PP_DATABASE__USER: "${PP_DATABASE__USER:?Set PP_DATABASE__USER}"
+  PP_DATABASE__PASSWORD: "${PP_DATABASE__PASSWORD:?Set PP_DATABASE__PASSWORD}"
+  PP_DATABASE__POOL_SIZE: "${PP_DATABASE__POOL_SIZE:-5}"
+  PP_DATABASE__MAX_OVERFLOW: "${PP_DATABASE__MAX_OVERFLOW:-5}"
+  PP_DATABASE__POOL_TIMEOUT: "${PP_DATABASE__POOL_TIMEOUT:-30}"
 
 services:
+  migrate:
+    <<: *app
+    command: [ "alembic", "upgrade", "head" ]
+    restart: "no"
+    environment:
+      <<: *database-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
-    image: postgres:17-bookworm
+    image: "${POSTGRES_IMAGE:-postgres:17-bookworm}"
     restart: unless-stopped
     environment:
-      POSTGRES_DB: payments
-      POSTGRES_USER: payments
-      POSTGRES_PASSWORD: payments_dev
+      POSTGRES_DB: "${PP_DATABASE__NAME:?Set PP_DATABASE__NAME}"
+      POSTGRES_USER: "${PP_DATABASE__USER:?Set PP_DATABASE__USER}"
+      POSTGRES_PASSWORD: "${PP_DATABASE__PASSWORD:?Set PP_DATABASE__PASSWORD}"
     ports:
-      - "127.0.0.1:5432:5432"
+      - "${BIND_HOST:-127.0.0.1}:${POSTGRES_PUBLISHED_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      test: [ "CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\"" ]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
 
   rabbitmq:
-    image: rabbitmq:4-management
+    image: "${RABBITMQ_IMAGE:-rabbitmq:4-management}"
     hostname: rabbitmq
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: payments
-      RABBITMQ_DEFAULT_PASS: payments_dev
-      RABBITMQ_DEFAULT_VHOST: payments
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER:?Set RABBITMQ_DEFAULT_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:?Set RABBITMQ_DEFAULT_PASS}"
+      RABBITMQ_DEFAULT_VHOST: "${RABBITMQ_DEFAULT_VHOST:?Set RABBITMQ_DEFAULT_VHOST}"
     ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
+      - "${BIND_HOST:-127.0.0.1}:${RABBITMQ_PUBLISHED_PORT:-5672}:5672"
+      - "${BIND_HOST:-127.0.0.1}:${RABBITMQ_MANAGEMENT_PUBLISHED_PORT:-15672}:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -51,39 +71,68 @@ services:
 
   api:
     <<: *app
-    command: ["payment-processing"]
+    command: [ "payment-processing" ]
     environment:
-      PP_APP__HOST: "0.0.0.0"
-      PP_APP__PORT: "8000"
-      PP_APP__LOG_LEVEL: INFO
-      PP_APP__LOG_RENDERER: console
+      <<: *database-environment
+      PP_APP__HOST: "${PP_APP__HOST:-0.0.0.0}"
+      PP_APP__PORT: "${PP_APP__PORT:-8000}"
+      PP_APP__API_KEY: "${PP_APP__API_KEY:?Set PP_APP__API_KEY}"
+      PP_APP__LOG_LEVEL: "${PP_APP__LOG_LEVEL:-INFO}"
+      PP_APP__LOG_RENDERER: "${PP_APP__LOG_RENDERER:-console}"
     ports:
-      - "127.0.0.1:8000:8000"
+      - "${BIND_HOST:-127.0.0.1}:${API_PUBLISHED_PORT:-8000}:${PP_APP__PORT:-8000}"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).close()"]
+      test: [ "CMD", "python", "-c", "import os, urllib.request; port = os.environ['PP_APP__PORT']; request = urllib.request.Request(f'http://127.0.0.1:{port}/health', headers={'X-API-Key': os.environ['PP_APP__API_KEY']}); urllib.request.urlopen(request, timeout=3).close()" ]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
   consumer:
     <<: *app
-    command: ["payment-processing-worker"]
+    command: [ "payment-processing-worker" ]
+    stop_grace_period: 45s
     environment:
-      PP_WORKER__HOST: "0.0.0.0"
-      PP_WORKER__PORT: "8001"
-      PP_WORKER__RABBITMQ_URL: "amqp://payments:payments_dev@rabbitmq:5672/payments"
-      PP_WORKER__LOG_LEVEL: INFO
-      PP_WORKER__LOG_RENDERER: console
+      <<: *database-environment
+      PP_WORKER__HOST: "${PP_WORKER__HOST:-0.0.0.0}"
+      PP_WORKER__PORT: "${PP_WORKER__PORT:-8001}"
+      PP_WORKER__RABBITMQ_URL: "${RABBITMQ_URL:?Set RABBITMQ_URL}"
+      PP_WORKER__LOG_LEVEL: "${PP_WORKER__LOG_LEVEL:-INFO}"
+      PP_WORKER__LOG_RENDERER: "${PP_WORKER__LOG_RENDERER:-console}"
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3).close()" ]
+      test: [ "CMD", "python", "-c", "import os, urllib.request; port = os.environ['PP_WORKER__PORT']; urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=3).close()" ]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  outbox-publisher:
+    <<: *app
+    command: [ "payment-processing-outbox" ]
+    environment:
+      <<: *database-environment
+      PP_OUTBOX__RABBITMQ_URL: "${RABBITMQ_URL:?Set RABBITMQ_URL}"
+      PP_OUTBOX__POLL_INTERVAL: "${PP_OUTBOX__POLL_INTERVAL:-1.0}"
+      PP_OUTBOX__ERROR_DELAY: "${PP_OUTBOX__ERROR_DELAY:-3.0}"
+      PP_OUTBOX__PUBLISH_TIMEOUT: "${PP_OUTBOX__PUBLISH_TIMEOUT:-5.0}"
+      PP_OUTBOX__ITERATION_TIMEOUT: "${PP_OUTBOX__ITERATION_TIMEOUT:-15.0}"
+      PP_OUTBOX__LOG_LEVEL: "${PP_OUTBOX__LOG_LEVEL:-INFO}"
+      PP_OUTBOX__LOG_RENDERER: "${PP_OUTBOX__LOG_RENDERER:-console}"
+      PP_DATABASE__POOL_SIZE: "${OUTBOX_DATABASE_POOL_SIZE:-1}"
+      PP_DATABASE__MAX_OVERFLOW: "${OUTBOX_DATABASE_MAX_OVERFLOW:-0}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres_data:

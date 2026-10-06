@@ -32,6 +32,9 @@ RUN groupadd --gid 10001 appuser \
     && useradd --uid 10001 --gid appuser --create-home appuser
 
 COPY --from=builder /app/.venv /app/.venv
+COPY pyproject.toml ./pyproject.toml
+COPY alembic.ini ./alembic.ini
+COPY migrations ./migrations
 
 USER appuser
 
