@@ -1,5 +1,7 @@
-from fastapi import FastAPI
-from starlette.types import Lifespan
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
+
+from fastapi import Depends, FastAPI
 
 from payment_processing.presentation.api.docs.docs import (
     API_DESCRIPTION,
@@ -12,6 +14,7 @@ from payment_processing.presentation.api.exceptions.handlers import (
     setup_exception_handlers,
 )
 from payment_processing.presentation.api.routers import ROUTERS
+from payment_processing.presentation.api.security import require_api_key
 
 
 def create_app(
@@ -19,9 +22,11 @@ def create_app(
     title: str,
     version: str,
     debug: bool = False,
-    lifespan: Lifespan[FastAPI],
+    enable_docs: bool = False,
+    lifespan: Callable[[FastAPI], AbstractAsyncContextManager[None]],
 ) -> FastAPI:
     app = FastAPI(
+        dependencies=[Depends(require_api_key)],
         title=title,
         version=version,
         debug=debug,
@@ -30,9 +35,9 @@ def create_app(
         openapi_tags=OPENAPI_TAGS,
         openapi_external_docs=OPENAPI_EXTERNAL_DOCS,
         swagger_ui_parameters=SWAGGER_UI_PARAMETERS,
-        docs_url="/api/openapi",
-        redoc_url="/redoc",
-        openapi_url="/api/openapi.json",
+        docs_url="/api/openapi" if enable_docs else None,
+        redoc_url="/redoc" if enable_docs else None,
+        openapi_url="/api/openapi.json" if enable_docs else None,
         lifespan=lifespan,
     )
 
