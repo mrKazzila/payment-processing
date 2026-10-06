@@ -1,6 +1,4 @@
-__all__ = ("WorkerSettings",)
-
-from pydantic import AmqpDsn, BaseModel
+from pydantic import AmqpDsn, BaseModel, Field
 
 from payment_processing.infrastructure.observability.config import (
     LogLevel,
@@ -8,15 +6,13 @@ from payment_processing.infrastructure.observability.config import (
 )
 
 
-class WorkerSettings(BaseModel):
-    """Worker settings."""
-
-    name: str = "Payment Processing Worker"
-    specification_url: str = "amqp://rabbitmq.example.com:5672/"
+class OutboxSettings(BaseModel):
     rabbitmq_url: AmqpDsn = AmqpDsn("amqp://guest:guest@localhost:5672/")
 
-    host: str = "127.0.0.1"
-    port: int = 8001
+    poll_interval: float = Field(default=1.0, gt=0)
+    error_delay: float = Field(default=3.0, gt=0)
+    publish_timeout: float = Field(default=5.0, gt=0)
+    iteration_timeout: float = Field(default=15.0, gt=0)
 
     log_level: LogLevel = "INFO"
     log_renderer: LogRenderer = "console"

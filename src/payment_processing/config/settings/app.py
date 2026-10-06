@@ -1,6 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, SecretStr
 
-from payment_processing.config.logging import LogLevel, LogRenderer
+from payment_processing.infrastructure.observability.config import (
+    LogLevel,
+    LogRenderer,
+)
 
 __all__ = ("AppSettings",)
 
@@ -13,6 +16,7 @@ class AppSettings(BaseModel):
     host: str = "127.0.0.1"
     port: int = 8000
     reload: bool = False
+    api_key: SecretStr | None = Field(default=None, min_length=1)
 
     log_level: LogLevel = "INFO"
     log_renderer: LogRenderer = "json"

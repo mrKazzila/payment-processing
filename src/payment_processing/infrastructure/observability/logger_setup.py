@@ -13,7 +13,7 @@ import structlog
 from structlog.processors import CallsiteParameter
 from structlog.typing import BindableLogger, Processor
 
-from payment_processing.config.logging import (
+from payment_processing.infrastructure.observability.config import (
     LoggingConfig,
     LogRenderer,
 )
