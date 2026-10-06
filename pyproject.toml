@@ -8,13 +8,17 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "aio-pika>=10.1.0",
     "alembic>=1.20.0",
+    "dishka>=1.10.1",
+    "dishka-faststream>=0.7.0",
     "fastapi>=0.142.2",
     "faststream[rabbit]>=0.7.7",
+    "httpx>=0.28.1",
+    "psycopg[binary]>=3.3,<4",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
     "sqlalchemy[asyncio]>=2.1.3",
-    "stamina>=26.1.0",
     "starlette>=1.7.0",
     "structlog>=26.1.0",
     "uvicorn>=0.54.0",
@@ -27,13 +31,14 @@ dev = [
     "pytest>=9.1.1",
     "pytest-xdist>=3.8.0",
     "ruff>=0.16.10",
-    "tu>=0.0.5",
+    "ty>=0.0.84",
 ]
 
 
 [project.scripts]
 payment-processing = "payment_processing.entrypoints.api.__main__:main"
 payment-processing-worker = "payment_processing.entrypoints.payment_worker.__main__:main"
+payment-processing-outbox = "payment_processing.entrypoints.outbox_worker.__main__:main"
 payment-processing-docs = "payment_processing.entrypoints.payment_worker.docs:main"
 
 [build-system]
@@ -42,8 +47,33 @@ build-backend = "uv_build"
 
 
 # ==========================
-# ========= PyTest =========
+# ======== Tools ===========
 # ==========================
+
+# ======== alembic =========
+[tool.alembic]
+script_location = "%(here)s/migrations"
+prepend_sys_path = ["%(here)s/src"]
+
+file_template = "%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d%%(second).2d_%%(rev)s_%%(slug)s"
+timezone = "UTC"
+truncate_slug_length = 60
+output_encoding = "utf-8"
+
+[[tool.alembic.post_write_hooks]]
+name = "ruff_check"
+type = "module"
+module = "ruff"
+options = "check --fix REVISION_SCRIPT_FILENAME"
+
+[[tool.alembic.post_write_hooks]]
+name = "ruff_format"
+type = "module"
+module = "ruff"
+options = "format REVISION_SCRIPT_FILENAME"
+
+
+# ======== PyTest ==========
 [tool.pytest.ini_options]
 addopts = "-v -ra --import-mode=importlib"
 testpaths = ["tests"]
@@ -52,9 +82,7 @@ strict_markers = true
 strict_config = true
 
 
-# ==========================
-# ========= Ruff ===========
-# ==========================
+# ======== Ruff ============
 [tool.ruff]
 respect-gitignore = true
 line-length = 79
@@ -101,6 +129,7 @@ indent-style = "space"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]
+"migrations/versions/*.py" = ["E501"]
 
 [tool.ruff.lint.isort]
 split-on-trailing-comma = true
@@ -114,10 +143,7 @@ multiline-quotes = "double"
 docstring-quotes = "double"
 
 
-
-# ==========================
-# ====== Ty ========
-# ==========================
+# ======== Ty ==============
 [tool.ty.terminal]
 output-format = "concise"
 error-on-warning = false
@@ -133,3 +159,80 @@ exclude = [
     "env/**",
     "docs/**",
 ]
+
+
+# ====== import-linter =====
+[tool.importlinter]
+root_package = "payment_processing"
+include_external_packages = true
+
+# The presentation and infrastructure are independent of each other.
+[[tool.importlinter.contracts]]
+name = "Architecture layers"
+type = "layers"
+layers = [
+    "payment_processing.entrypoints",
+    "payment_processing.presentation | payment_processing.infrastructure",
+    "payment_processing.application",
+    "payment_processing.domain",
+]
+
+# Inverse dependencies within a project are already prohibited in layers.
+# Here, we additionally prohibit config and external libraries.
+[[tool.importlinter.contracts]]
+name = "Domain is pure"
+type = "forbidden"
+source_modules = ["payment_processing.domain"]
+forbidden_modules = [
+    "payment_processing.config",
+    "fastapi",
+    "starlette",
+    "uvicorn",
+    "faststream",
+    "aio_pika",
+    "sqlalchemy",
+    "alembic",
+    "psycopg",
+    "httpx",
+    "pydantic",
+    "pydantic_settings",
+    "dishka",
+    "dishka_faststream",
+    "stamina",
+    "structlog",
+]
+
+# The application uses a domain, its own DTOs, and ports.
+# The DTOs are currently defined as dataclasses, so Pydantic is also prohibited here.
+[[tool.importlinter.contracts]]
+name = "Application boundaries"
+type = "forbidden"
+source_modules = ["payment_processing.application"]
+forbidden_modules = [
+    "payment_processing.config",
+    "fastapi",
+    "starlette",
+    "uvicorn",
+    "faststream",
+    "aio_pika",
+    "sqlalchemy",
+    "alembic",
+    "psycopg",
+    "httpx",
+    "pydantic",
+    "pydantic_settings",
+    "dishka",
+    "dishka_faststream",
+    "stamina",
+    "structlog",
+]
+
+# Settings are passed to adapters via entrypoints.
+[[tool.importlinter.contracts]]
+name = "Adapters do not import config"
+type = "forbidden"
+source_modules = [
+    "payment_processing.presentation",
+    "payment_processing.infrastructure",
+]
+forbidden_modules = ["payment_processing.config"]
