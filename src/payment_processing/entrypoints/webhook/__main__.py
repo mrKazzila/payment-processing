@@ -14,14 +14,14 @@ class WebhookServer(HTTPServer):
 class WebhookHandler(BaseHTTPRequestHandler):
     server: WebhookServer
 
-    def do_get(self) -> None:
+    def do_GET(self) -> None:  # noqa: N802
         if self.path == "/health":
             self.respond(status=200, payload={"status": "OK"})
             return
 
         self.respond(status=404, payload={"error": "not_found"})
 
-    def do_post(self) -> None:
+    def do_POST(self) -> None:  # noqa: N802
         if self.path not in {"/ok", "/flaky", "/fail"}:
             self.respond(status=404, payload={"error": "not_found"})
             return
@@ -89,7 +89,11 @@ class WebhookHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def log_message(self, _format: str, *args: object) -> None:
+    def log_message(
+        self,
+        format: str,  # noqa: A002, ARG002
+        *args: object,
+    ) -> None:
         pass
 
 
