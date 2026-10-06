@@ -11,7 +11,8 @@ from payment_processing.entrypoints.payment_worker.bootstrap import (
 def _ensure_docs_allowed() -> None:
     if get_settings().environment != "local":
         raise SystemExit(
-            "Просмотр документации разрешён только при PP_ENVIRONMENT=local."
+            "Viewing the documentation "
+            "is permitted only when PP_ENVIRONMENT=local."
         )
 
 

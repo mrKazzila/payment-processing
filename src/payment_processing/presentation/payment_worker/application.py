@@ -3,26 +3,23 @@ from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 
 from faststream import FastStream
-from faststream.rabbit import RabbitBroker
+from faststream.rabbit import RabbitBroker, RabbitRouter
 
 from payment_processing.presentation.payment_worker.docs.docs import (
     create_specification,
 )
-from payment_processing.presentation.payment_worker.worker.payments import (
-    router,
-)
 
 
-# noinspection PyTypeChecker
 def create_app(
     *,
     broker: RabbitBroker,
+    router: RabbitRouter,
     lifespan: Callable[[], AbstractAsyncContextManager[None]],
     title: str,
     version: str,
 ) -> FastStream:
     broker.include_router(router)
-
+    # noinspection PyTypeChecker
     return FastStream(
         broker,
         lifespan=lifespan,
