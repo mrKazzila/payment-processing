@@ -3,7 +3,7 @@ from contextlib import AbstractAsyncContextManager
 
 from fastapi import Depends, FastAPI
 
-from payment_processing.presentation.api.docs.docs import (
+from payment_processing.presentation.api.docs.swagger import (
     API_DESCRIPTION,
     API_SUMMARY,
     OPENAPI_EXTERNAL_DOCS,
