@@ -3,21 +3,24 @@ from uuid import UUID
 
 from dishka import FromComponent
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Header, status
+from fastapi import APIRouter, status
 
 from payment_processing.application.use_cases.create_payment import (
     CreatePayment,
 )
 from payment_processing.application.use_cases.get_payment import GetPayment
-from payment_processing.presentation.api.mappers.payments import (
+from payment_processing.presentation.api.endpoints.payments.mapper import (
     to_create_payment_command,
     to_create_payment_response,
     to_payment_response,
 )
-from payment_processing.presentation.api.schemas.payments import (
+from payment_processing.presentation.api.endpoints.payments.schemas import (
     SCreatePaymentRequest,
     SCreatePaymentResponse,
     SPaymentResponse,
+)
+from payment_processing.presentation.api.endpoints.payments.types import (
+    IdempotencyKeyHeader,
 )
 
 router = APIRouter(
@@ -25,14 +28,6 @@ router = APIRouter(
     tags=["Payments"],
     route_class=DishkaRoute,
 )
-IdempotencyKeyHeader = Annotated[
-    str,
-    Header(
-        alias="Idempotency-Key",
-        min_length=1,
-        pattern=r"\S",
-    ),
-]
 
 
 @router.post(

@@ -3,18 +3,18 @@ from contextlib import AbstractAsyncContextManager
 
 from fastapi import Depends, FastAPI
 
-from payment_processing.presentation.api.docs.swagger import (
+from payment_processing.presentation.api.endpoints import ROUTERS
+from payment_processing.presentation.api.exception_handlers import (
+    setup_exception_handlers,
+)
+from payment_processing.presentation.api.security import require_api_key
+from payment_processing.presentation.api.specification import (
     API_DESCRIPTION,
     API_SUMMARY,
     OPENAPI_EXTERNAL_DOCS,
     OPENAPI_TAGS,
     SWAGGER_UI_PARAMETERS,
 )
-from payment_processing.presentation.api.exceptions.handlers import (
-    setup_exception_handlers,
-)
-from payment_processing.presentation.api.routers import ROUTERS
-from payment_processing.presentation.api.security import require_api_key
 
 
 def create_app(
