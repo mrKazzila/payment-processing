@@ -29,7 +29,7 @@ from payment_processing.presentation.payment_worker.application import (
 from payment_processing.presentation.payment_worker.middlewares import (
     MIDDLEWARES,
 )
-from payment_processing.presentation.payment_worker.worker.payments import (
+from payment_processing.presentation.payment_worker.payments.payments import (
     create_router,
 )
 

@@ -25,7 +25,7 @@ from payment_processing.infrastructure.webhooks.client import (
 from payment_processing.infrastructure.webhooks.sender import (
     HTTPXWebhookSender,
 )
-from payment_processing.presentation.payment_worker.worker.handler import (
+from payment_processing.presentation.payment_worker.payments.handler import (
     PaymentMessageHandler,
 )
 

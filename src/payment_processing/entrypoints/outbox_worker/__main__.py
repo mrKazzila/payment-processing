@@ -6,7 +6,7 @@ from payment_processing.entrypoints.outbox_worker.server import run_app
 
 
 def main() -> None:
-    """Run outbox worker application."""
+    """Run outbox payments application."""
     settings = get_settings()
     app = create_application(settings=settings)
 

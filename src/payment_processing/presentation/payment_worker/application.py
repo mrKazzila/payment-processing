@@ -5,7 +5,7 @@ from contextlib import AbstractAsyncContextManager
 from faststream import FastStream
 from faststream.rabbit import RabbitBroker, RabbitRouter
 
-from payment_processing.presentation.payment_worker.docs.docs import (
+from payment_processing.presentation.payment_worker.specification import (
     create_specification,
 )
 
