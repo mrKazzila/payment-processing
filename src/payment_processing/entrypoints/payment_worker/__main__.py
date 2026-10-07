@@ -12,8 +12,7 @@ def main() -> None:
     app = create_application(settings=settings)
     run_app(
         app=app,
-        host=settings.worker.host,
-        port=settings.worker.port,
+        settings=settings.worker.server,
     )
 
 

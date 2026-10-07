@@ -10,8 +10,7 @@ def main() -> None:
 
     run_app(
         app=app,
-        host=settings.app.host,
-        port=settings.app.port,
+        settings=settings.app.server,
     )
 
 

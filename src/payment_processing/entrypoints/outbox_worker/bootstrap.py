@@ -19,9 +19,6 @@ from payment_processing.entrypoints.outbox_worker.dependencies import (
 from payment_processing.infrastructure.messaging.topology import (
     declare_topology,
 )
-from payment_processing.infrastructure.observability.config import (
-    LoggingConfig,
-)
 from payment_processing.infrastructure.observability.logger_setup import (
     setup_logging,
 )
@@ -37,13 +34,8 @@ async def run_application(
     settings: Settings,
     stop_event: asyncio.Event,
 ) -> None:
-    config = LoggingConfig(
-        level=settings.outbox.log_level,
-        renderer=settings.outbox.log_renderer,
-        enable_diagnostics=settings.outbox.enable_log_diagnostics,
-        use_utc_timestamps=settings.outbox.use_utc_timestamps,
-    )
-    setup_logging(config=config)
+    logging_config = settings.outbox.logging.to_config()
+    setup_logging(config=logging_config)
 
     broker = RabbitBroker(
         str(settings.outbox.rabbitmq_url),
@@ -53,7 +45,7 @@ async def run_application(
             on_return_raises=True,
         ),
         logger=logging.getLogger("payment_processing.outbox"),
-        log_level=config.resolved_level(),
+        log_level=logging_config.resolved_level(),
     )
 
     container = make_async_container(

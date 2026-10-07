@@ -12,9 +12,6 @@ from payment_processing.entrypoints.di.database import (
     DatabaseProvider,
     RepositoryProvider,
 )
-from payment_processing.infrastructure.observability.config import (
-    LoggingConfig,
-)
 from payment_processing.infrastructure.observability.logger_setup import (
     setup_logging,
 )
@@ -48,11 +45,7 @@ def create_application(
     *,
     settings: Settings,
 ) -> FastAPI:
-    setup_logging(
-        config=LoggingConfig(
-            level=settings.app.log_level,
-        ),
-    )
+    setup_logging(config=settings.app.logging.to_config())
 
     api_key = settings.app.api_key
 

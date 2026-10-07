@@ -2,12 +2,13 @@ import uvicorn
 from faststream import FastStream
 from faststream.asgi import make_ping_asgi
 
+from payment_processing.config.settings import WorkerServerSettings
+
 
 def run_app(
     *,
     app: FastStream,
-    host: str,
-    port: int,
+    settings: WorkerServerSettings,
 ) -> None:
     asgi_app = app.as_asgi(
         asgi_routes=[
@@ -23,11 +24,12 @@ def run_app(
     )
 
     uvicorn.run(
-        asgi_app,
-        host=host,
-        port=port,
-        lifespan="on",
-        workers=1,
+        app=asgi_app,
+        host=settings.host,
+        port=settings.port,
+        lifespan=settings.lifespan,
+        workers=settings.workers,
+        loop=settings.loop,
         log_config=None,
         log_level=None,
         access_log=False,
