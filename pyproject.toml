@@ -26,11 +26,13 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "anyio>=4.15.1",
     "faststream[cli]>=0.7.7",
     "import-linter>=2.15",
     "pytest>=9.1.1",
     "pytest-xdist>=3.8.0",
     "ruff>=0.16.10",
+    "testcontainers[postgres,rabbitmq]>=4.15.0",
     "ty>=0.0.84",
 ]
 
@@ -80,6 +82,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 strict_markers = true
 strict_config = true
+markers = ["requires_docker: requires Docker for PostgreSQL or RabbitMQ"]
 
 
 # ======== Ruff ============
