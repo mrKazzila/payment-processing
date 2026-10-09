@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from payment_processing.presentation.api.routers.healthcheck import (
+from payment_processing.presentation.api.endpoints.healthcheck.routers import (
     router as healthcheck_router,
 )
-from payment_processing.presentation.api.routers.payments import (
+from payment_processing.presentation.api.endpoints.payments.routers import (
     router as payments_router,
 )
 

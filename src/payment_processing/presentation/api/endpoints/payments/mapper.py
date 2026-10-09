@@ -4,7 +4,7 @@ from payment_processing.application.dtos.payments import (
     CreatePaymentCommand,
 )
 from payment_processing.domain.payment import Payment
-from payment_processing.presentation.api.schemas.payments import (
+from payment_processing.presentation.api.endpoints.payments.schemas import (
     SCreatePaymentRequest,
     SCreatePaymentResponse,
     SPaymentResponse,

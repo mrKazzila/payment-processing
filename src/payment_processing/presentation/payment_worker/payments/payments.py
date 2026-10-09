@@ -10,11 +10,11 @@ from faststream.rabbit.annotations import (
 from faststream.rabbit.message import RabbitMessage
 from pydantic import SkipValidation
 
-from payment_processing.presentation.payment_worker.schemas.payments import (
-    PaymentCreatedMessage,
-)
-from payment_processing.presentation.payment_worker.worker.handler import (
+from payment_processing.presentation.payment_worker.payments.handler import (
     PaymentMessageHandler,
+)
+from payment_processing.presentation.payment_worker.payments.schemas import (
+    PaymentCreatedMessage,
 )
 
 

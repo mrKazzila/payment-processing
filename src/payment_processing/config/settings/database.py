@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field, SecretStr
 
+__all__ = ("DatabaseSettings",)
+
 
 class DatabaseSettings(BaseModel):
     host: str = "127.0.0.1"

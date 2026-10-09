@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from payment_processing.presentation.api.schemas.health import (
+from payment_processing.presentation.api.endpoints.healthcheck.schemas import (
     SHealthcheckResponse,
 )
 

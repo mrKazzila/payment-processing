@@ -74,15 +74,15 @@ services:
     command: [ "payment-processing" ]
     environment:
       <<: *database-environment
-      PP_APP__HOST: "${PP_APP__HOST:-0.0.0.0}"
-      PP_APP__PORT: "${PP_APP__PORT:-8000}"
+      PP_APP__SERVER__HOST: "${PP_APP__SERVER__HOST:-0.0.0.0}"
+      PP_APP__SERVER__PORT: "${PP_APP__SERVER__PORT:-8000}"
       PP_APP__API_KEY: "${PP_APP__API_KEY:?Set PP_APP__API_KEY}"
-      PP_APP__LOG_LEVEL: "${PP_APP__LOG_LEVEL:-INFO}"
-      PP_APP__LOG_RENDERER: "${PP_APP__LOG_RENDERER:-console}"
+      PP_APP__LOGGING__LEVEL: "${PP_APP__LOGGING__LEVEL:-INFO}"
+      PP_APP__LOGGING__RENDERER: "${PP_APP__LOGGING__RENDERER:-console}"
     ports:
-      - "${BIND_HOST:-127.0.0.1}:${API_PUBLISHED_PORT:-8000}:${PP_APP__PORT:-8000}"
+      - "${BIND_HOST:-127.0.0.1}:${API_PUBLISHED_PORT:-8000}:${PP_APP__SERVER__PORT:-8000}"
     healthcheck:
-      test: [ "CMD", "python", "-c", "import os, urllib.request; port = os.environ['PP_APP__PORT']; request = urllib.request.Request(f'http://127.0.0.1:{port}/health', headers={'X-API-Key': os.environ['PP_APP__API_KEY']}); urllib.request.urlopen(request, timeout=3).close()" ]
+      test: [ "CMD", "python", "-c", "import os, urllib.request; port = os.environ['PP_APP__SERVER__PORT']; request = urllib.request.Request(f'http://127.0.0.1:{port}/health', headers={'X-API-Key': os.environ['PP_APP__API_KEY']}); urllib.request.urlopen(request, timeout=3).close()" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -97,18 +97,18 @@ services:
     stop_grace_period: 45s
     environment:
       <<: *database-environment
-      PP_WORKER__HOST: "${PP_WORKER__HOST:-0.0.0.0}"
-      PP_WORKER__PORT: "${PP_WORKER__PORT:-8001}"
+      PP_WORKER__SERVER__HOST: "${PP_WORKER__SERVER__HOST:-0.0.0.0}"
+      PP_WORKER__SERVER__PORT: "${PP_WORKER__SERVER__PORT:-8001}"
       PP_WORKER__RABBITMQ_URL: "${RABBITMQ_URL:?Set RABBITMQ_URL}"
-      PP_WORKER__LOG_LEVEL: "${PP_WORKER__LOG_LEVEL:-INFO}"
-      PP_WORKER__LOG_RENDERER: "${PP_WORKER__LOG_RENDERER:-console}"
+      PP_WORKER__LOGGING__LEVEL: "${PP_WORKER__LOGGING__LEVEL:-INFO}"
+      PP_WORKER__LOGGING__RENDERER: "${PP_WORKER__LOGGING__RENDERER:-console}"
     depends_on:
       migrate:
         condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "python", "-c", "import os, urllib.request; port = os.environ['PP_WORKER__PORT']; urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=3).close()" ]
+      test: [ "CMD", "python", "-c", "import os, urllib.request; port = os.environ['PP_WORKER__SERVER__PORT']; urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=3).close()" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -124,10 +124,10 @@ services:
       PP_OUTBOX__ERROR_DELAY: "${PP_OUTBOX__ERROR_DELAY:-3.0}"
       PP_OUTBOX__PUBLISH_TIMEOUT: "${PP_OUTBOX__PUBLISH_TIMEOUT:-5.0}"
       PP_OUTBOX__ITERATION_TIMEOUT: "${PP_OUTBOX__ITERATION_TIMEOUT:-15.0}"
-      PP_OUTBOX__LOG_LEVEL: "${PP_OUTBOX__LOG_LEVEL:-INFO}"
-      PP_OUTBOX__LOG_RENDERER: "${PP_OUTBOX__LOG_RENDERER:-console}"
       PP_DATABASE__POOL_SIZE: "${OUTBOX_DATABASE_POOL_SIZE:-1}"
       PP_DATABASE__MAX_OVERFLOW: "${OUTBOX_DATABASE_MAX_OVERFLOW:-0}"
+      PP_OUTBOX__LOGGING_LEVEL: "${PP_OUTBOX__LOGGING_LEVEL:-INFO}"
+      PP_OUTBOX__LOGGING_RENDERER: "${PP_OUTBOX__LOGGING_RENDERER:-console}"
     depends_on:
       migrate:
         condition: service_completed_successfully

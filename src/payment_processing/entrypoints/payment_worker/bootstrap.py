@@ -20,9 +20,6 @@ from payment_processing.infrastructure.messaging.topology import (
     PAYMENTS_QUEUE,
     declare_topology,
 )
-from payment_processing.infrastructure.observability.config import (
-    LoggingConfig,
-)
 from payment_processing.infrastructure.observability.logger_setup import (
     setup_logging,
 )
@@ -32,7 +29,7 @@ from payment_processing.presentation.payment_worker.application import (
 from payment_processing.presentation.payment_worker.middlewares import (
     MIDDLEWARES,
 )
-from payment_processing.presentation.payment_worker.worker.payments import (
+from payment_processing.presentation.payment_worker.payments.payments import (
     create_router,
 )
 
@@ -40,13 +37,8 @@ logger = structlog.get_logger(__name__)
 
 
 def create_application(*, settings: Settings) -> FastStream:
-    config = LoggingConfig(
-        level=settings.worker.log_level,
-        renderer=settings.worker.log_renderer,
-        enable_diagnostics=settings.worker.enable_log_diagnostics,
-        use_utc_timestamps=settings.worker.use_utc_timestamps,
-    )
-    setup_logging(config=config)
+    logging_config = settings.worker.logging.to_config()
+    setup_logging(config=logging_config)
 
     broker = RabbitBroker(
         str(settings.worker.rabbitmq_url),
@@ -59,7 +51,7 @@ def create_application(*, settings: Settings) -> FastStream:
         ),
         specification_url=settings.worker.specification_url,
         logger=logging.getLogger("payment_processing.rabbitmq"),
-        log_level=config.resolved_level(),
+        log_level=logging_config.resolved_level(),
         middlewares=[*MIDDLEWARES],
     )
 
