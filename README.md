@@ -1,21 +1,22 @@
 # payment-processing
 
-## Запуск
+## Getting started
 
-Скопировать настройки, при необходимости изменить.
+Copy the configuration file and adjust the settings as needed.
+
 ```bash
 cp env/.env.example env/.env
 ```
 
-Запуск проекта, API будет доступен на `http://localhost:8000`.
+Start the project. The API will be available at `http://localhost:8000`.
 
 ```bash
 docker compose --env-file env/.env up -d --build
 ```
 
-## Попробовать через curl
+## Try it with curl
 
-Проверить, доступен ли сервис:
+Check whether the service is available:
 
 ```bash
 curl http://localhost:8000/health \
@@ -23,7 +24,7 @@ curl http://localhost:8000/health \
   -w '\n'
 ```
 
-Создать платёж.
+Create a payment:
 
 ```bash
 curl http://localhost:8000/api/v1/payments \
@@ -34,13 +35,13 @@ curl http://localhost:8000/api/v1/payments \
   -d '{
     "amount": "150.00",
     "currency": "RUB",
-    "description": "Заказ №1",
+    "description": "Order #1",
     "metadata": {"order_id": "1"},
     "webhook_url": "http://payment-webhook:8080/ok"
   }'
 ```
 
-Посмотреть платёж, подставь `payment_id` из ответа:
+Retrieve the payment, replacing `PASTE_PAYMENT_ID` with the `payment_id` from the response:
 
 ```bash
 curl http://localhost:8000/api/v1/payments/PASTE_PAYMENT_ID \
@@ -48,39 +49,40 @@ curl http://localhost:8000/api/v1/payments/PASTE_PAYMENT_ID \
   -H 'X-API-Key: local-development-key'
 ```
 
-## Тесты
+## Tests
 
-Установить зависимости и запустить тесты без внешних сервисов:
+Install dependencies and run the tests that do not require external services:
 
 ```bash
 uv sync --dev
 uv run pytest -m "not requires_docker"
 ```
 
-Полный набор требует запущенного Docker. Testcontainers автоматически
-поднимает PostgreSQL 17 и RabbitMQ 4 на случайных портах и удаляет контейнеры
-после запуска. При первом запуске потребуется скачать образы. Рабочий
-Docker Compose поднимать не нужно, его базы и очереди не используются.
+The full test suite requires Docker to be running. Testcontainers automatically
+starts PostgreSQL 17 and RabbitMQ 4 on random ports and removes the containers
+after the test run. Images must be downloaded on the first run. You do not need
+to start the application's Docker Compose stack; its databases and queues are
+not used by the tests.
 
 ```bash
 uv run pytest
 uv run pytest -n 2
 ```
 
-Только проверки с Docker:
+Run only the tests that require Docker:
 
 ```bash
 uv run pytest -m requires_docker
 ```
 
-Для каждого процесса pytest используются отдельные контейнеры. Схема БД
-создаётся настоящими Alembic-миграциями, данные очищаются между тестами,
-очереди имеют уникальные имена. Недоступный Docker приводит к ошибке
-интеграционных тестов, а не к их пропуску. Настройки подключения Docker и
-`~/.testcontainers.properties`, если этот файл есть, должны указывать
-на работающий Docker daemon.
+Each pytest process uses separate containers. The database schema is created
+using real Alembic migrations, data is cleared between tests, and queues have
+unique names. If Docker is unavailable, integration tests that require it fail
+rather than being skipped. Docker connection settings and
+`~/.testcontainers.properties`, if present, must point to a running Docker daemon.
 
-Тесты разделены по проверяемым границам, внутри сохранены слои ЧА:
+Tests are grouped by the boundaries they exercise, with Clean Architecture
+layers preserved within each group:
 
 ```text
 tests/
@@ -97,14 +99,15 @@ tests/
 └── factories.py
 ```
 
-В `unit/` находятся проверки домена, use cases с подменёнными портами
-и отказа запуска с некорректным API-ключом. В `integration/` — проверки
-адаптеров с PostgreSQL/RabbitMQ и HTTP-проверки с настоящими роутерами,
-валидацией и DI, включая доступность документации и создание платежа.
+The `unit/` directory contains domain tests, use case tests with test doubles
+for ports, and tests verifying that startup fails with an invalid API key.
+The `integration/` directory contains adapter tests using PostgreSQL/RabbitMQ
+and HTTP tests with real routers, validation, and dependency injection,
+including documentation availability and payment creation.
 
-Уровень теста и зависимость от Docker независимы: HTTP-тесты с подменёнными
-use cases являются интеграционными, но Docker им не нужен. Маркер
-`requires_docker` отмечает только проверки, которым нужны контейнеры.
+The test level and Docker dependency are independent: HTTP tests with test
+doubles for use cases are integration tests, but they do not require Docker.
+The `requires_docker` marker applies only to tests that need containers.
 
 ```bash
 uv run pytest tests/unit
@@ -112,7 +115,8 @@ uv run pytest tests/integration
 uv run pytest tests/integration -m "not requires_docker"
 ```
 
-Тесты покрывают все пять слоёв ЧА. Успешные и ошибочные сценарии
-разделены на самостоятельные функции без условных ветвлений.
-Параметризованные случаи вынесены в `tests/data/`. Тесты используют AAA
-с разделением пустыми строками. Сквозных E2E-тестов пока нет.
+Tests cover all five Clean Architecture layers. Success and failure scenarios
+use separate test functions without conditional branches. Parameterized test
+cases are stored in `tests/data/`. Tests follow the Arrange–Act–Assert (AAA)
+pattern, with blank lines separating the phases. There are no end-to-end (E2E)
+tests yet.
