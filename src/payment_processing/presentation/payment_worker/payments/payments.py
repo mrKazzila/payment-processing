@@ -40,9 +40,9 @@ def create_router(*, queue: RabbitQueue) -> RabbitRouter:
         no_reply=True,
         title="payments.new:Consume",
         description=(
-            "Обрабатывает платёж и отправляет webhook. "
-            "При ошибках выполняет до трёх попыток, "
-            "после чего отправляет сообщение в DLQ."
+            "Processes a payment and delivers a webhook. "
+            "On failure, makes up to three attempts "
+            "before sending the message to the dead-letter queue (DLQ)."
         ),
     )(process_payment)
     return router

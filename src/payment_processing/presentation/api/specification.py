@@ -1,46 +1,47 @@
-API_SUMMARY = "API сервиса асинхронной обработки платежей."
+API_SUMMARY = "API for asynchronous payment processing."
 
 API_DESCRIPTION = """
-## Описание
+## Overview
 
-Создание платежей и получение их текущего состояния.
-Платежи обрабатываются асинхронно; результат отправляется на `webhook_url`.
+Create payments and retrieve their current status.
+Payments are processed asynchronously; results are sent to `webhook_url`.
 
-## Платежи
+## Payments
 
-- `POST /api/v1/payments` — создание платежа (`202 Accepted`).
-- `GET /api/v1/payments/{payment_id}` — получение платежа и его статуса.
+- `POST /api/v1/payments` — create a payment (`202 Accepted`).
+- `GET /api/v1/payments/{payment_id}` — retrieve a payment and its status.
 
-Для создания обязателен заголовок `Idempotency-Key`. Повтор с тем же ключом
-и данными возвращает существующий платёж; с другими данными — `409 Conflict`.
-Все методы API, включая `/health`, требуют заголовок `X-API-Key`.
+Creating a payment requires the `Idempotency-Key` header. Repeating a request
+with the same key and data returns the existing payment; using different data
+returns `409 Conflict`.
+All API endpoints, including `/health`, require the `X-API-Key` header.
 
-## Служебные методы
+## Health check
 
-- `GET /health` — проверка доступности HTTP API; возвращает `{"status": "OK"}`.
+- `GET /health` — check HTTP API availability; returns `{"status": "OK"}`.
 
-## Документация
+## Documentation
 
-Доступна в локальном окружении (`environment=local`).
+Available in the local environment (`environment=local`).
 
 - [Swagger UI](/api/openapi)
 - [ReDoc](/redoc)
-- [Схема OpenAPI](/api/openapi.json)
+- [OpenAPI schema](/api/openapi.json)
 """
 
 OPENAPI_TAGS = [
     {
         "name": "Payments",
-        "description": "Создание платежей и получение их состояния.",
+        "description": "Create payments and retrieve their status.",
     },
     {
         "name": "Health",
-        "description": "Проверка доступности HTTP API.",
+        "description": "Check HTTP API availability.",
     },
 ]
 
 OPENAPI_EXTERNAL_DOCS = {
-    "description": "Репозиторий проекта Payment Processing.",
+    "description": "Payment Processing project repository.",
     "url": "https://github.com/mrKazzila/payment-processing",
 }
 

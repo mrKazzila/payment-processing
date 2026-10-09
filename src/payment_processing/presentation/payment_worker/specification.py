@@ -1,20 +1,20 @@
 from faststream.specification import AsyncAPI, Contact
 
 WORKER_DESCRIPTION = """
-# Сервис обработки платежей
+# Payment processing service
 
-Consumer очереди `payments.new`.
+Consumer for the `payments.new` queue.
 
-## Назначение
-- Валидация входящих событий.
-- Обработка платежа через эмуляцию платёжного шлюза.
-- Сохранение результата обработки.
-- Отправка webhook с повторными попытками.
+## Responsibilities
+- Validate incoming events.
+- Process payments through a simulated payment gateway.
+- Persist processing results.
+- Deliver webhooks with retries.
 
-## Ошибки
-Некорректные сообщения направляются в DLQ.
-Временные ошибки обрабатываются повторно;
-после исчерпания попыток сообщение направляется в DLQ.
+## Error handling
+Invalid messages are sent to the dead-letter queue (DLQ).
+Transient failures are retried;
+once all attempts are exhausted, the message is sent to the DLQ.
 """
 
 
