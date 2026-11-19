@@ -27,6 +27,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "anyio>=4.15.1",
+    "arch-blueprint>=0.3.0",
     "faststream[cli]>=0.7.7",
     "import-linter>=2.15",
     "pytest>=9.1.1",
