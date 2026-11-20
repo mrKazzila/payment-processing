@@ -17,11 +17,9 @@ class GetPayment:
     payments: PaymentRepository
 
     async def execute(self, *, payment_id: UUID) -> Payment:
-        payment = await self.payments.get_by_id(
+        if payment := await self.payments.get_by_id(
             payment_id=payment_id,
-        )
+        ):
+            return payment
 
-        if payment is None:
-            raise PaymentNotFoundError(payment_id=payment_id)
-
-        return payment
+        raise PaymentNotFoundError(payment_id=payment_id)
