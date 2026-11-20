@@ -1,8 +1,10 @@
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
 
+from payment_processing.infrastructure.database.models.mixins import ReprMixin
 
-class Base(DeclarativeBase):
+
+class Base(ReprMixin, DeclarativeBase):
     metadata = MetaData(
         naming_convention={
             "ix": "ix_%(table_name)s_%(column_0_name)s",
