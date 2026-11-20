@@ -3,16 +3,12 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import structlog
-from dishka import make_async_container
 from dishka_faststream import setup_dishka
 from faststream import FastStream
 from faststream.rabbit import Channel, RabbitBroker
 
 from payment_processing.config.settings import Settings
-from payment_processing.entrypoints.di.database import (
-    DatabaseProvider,
-    RepositoryProvider,
-)
+from payment_processing.entrypoints.di.containers import create_container
 from payment_processing.entrypoints.payment_worker.dependencies import (
     PaymentWorkerProvider,
 )
@@ -55,14 +51,10 @@ def create_application(*, settings: Settings) -> FastStream:
         middlewares=[*MIDDLEWARES],
     )
 
-    container = make_async_container(
-        DatabaseProvider(),
-        RepositoryProvider(),
-        PaymentWorkerProvider(),
-        context={
-            Settings: settings,
-            RabbitBroker: broker,
-        },
+    container = create_container(
+        settings=settings,
+        providers=[PaymentWorkerProvider()],
+        broker=broker,
     )
 
     @asynccontextmanager

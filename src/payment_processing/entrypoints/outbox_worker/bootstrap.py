@@ -3,17 +3,14 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 import structlog
-from dishka import AsyncContainer, make_async_container
+from dishka import AsyncContainer
 from faststream.rabbit import Channel, RabbitBroker
 
 from payment_processing.application.use_cases.publish_outbox_message import (
     PublishOutboxMessage,
 )
 from payment_processing.config.settings import Settings
-from payment_processing.entrypoints.di.database import (
-    DatabaseProvider,
-    RepositoryProvider,
-)
+from payment_processing.entrypoints.di.containers import create_container
 from payment_processing.entrypoints.outbox_worker.dependencies import (
     OutboxProvider,
 )
@@ -48,14 +45,10 @@ def create_application(*, settings: Settings) -> OutboxApplication:
         log_level=logging_config.resolved_level(),
     )
 
-    container = make_async_container(
-        DatabaseProvider(),
-        RepositoryProvider(),
-        OutboxProvider(),
-        context={
-            Settings: settings,
-            RabbitBroker: broker,
-        },
+    container = create_container(
+        settings=settings,
+        providers=[OutboxProvider()],
+        broker=broker,
     )
 
     async def publish_once() -> bool:
