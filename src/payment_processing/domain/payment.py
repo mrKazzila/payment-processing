@@ -16,40 +16,6 @@ AMOUNT_QUANTUM = Decimal("0.01")
 MAX_PAYMENT_AMOUNT = Decimal("9999999999999999.99")
 
 
-def validate_amount(*, amount: Decimal) -> Decimal:
-    if not isinstance(amount, Decimal):
-        raise InvalidPaymentAmountError("Amount must be a Decimal.")
-
-    if not amount.is_finite():
-        raise InvalidPaymentAmountError("Amount must be finite.")
-
-    if not Decimal("0") < amount <= MAX_PAYMENT_AMOUNT:
-        raise InvalidPaymentAmountError(
-            f"Amount must be positive and at most {MAX_PAYMENT_AMOUNT}."
-        )
-
-    with localcontext() as context:
-        context.prec = 18
-        normalized = amount.quantize(
-            AMOUNT_QUANTUM,
-            rounding=ROUND_DOWN,
-        )
-
-    if normalized != amount:
-        raise InvalidPaymentAmountError(
-            "Amount must have at most two decimal places."
-        )
-
-    return normalized
-
-
-def validate_timestamp(value: datetime, *, field_name: str) -> None:
-    if value.tzinfo is None or value.utcoffset() is None:
-        raise InvalidPaymentStateError(
-            f"{field_name} must include a timezone."
-        )
-
-
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Payment:
     id: UUID
@@ -121,4 +87,38 @@ class Payment:
             self,
             status=status,
             processed_at=processed_at,
+        )
+
+
+def validate_amount(*, amount: Decimal) -> Decimal:
+    if not isinstance(amount, Decimal):
+        raise InvalidPaymentAmountError("Amount must be a Decimal.")
+
+    if not amount.is_finite():
+        raise InvalidPaymentAmountError("Amount must be finite.")
+
+    if not Decimal("0") < amount <= MAX_PAYMENT_AMOUNT:
+        raise InvalidPaymentAmountError(
+            f"Amount must be positive and at most {MAX_PAYMENT_AMOUNT}."
+        )
+
+    with localcontext() as context:
+        context.prec = 18
+        normalized = amount.quantize(
+            AMOUNT_QUANTUM,
+            rounding=ROUND_DOWN,
+        )
+
+    if normalized != amount:
+        raise InvalidPaymentAmountError(
+            "Amount must have at most two decimal places."
+        )
+
+    return normalized
+
+
+def validate_timestamp(value: datetime, *, field_name: str) -> None:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise InvalidPaymentStateError(
+            f"{field_name} must include a timezone."
         )
